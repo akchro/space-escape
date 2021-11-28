@@ -12,13 +12,17 @@ window_clock = pygame.time.Clock()  # creates clock to control framerate
 
 class Particles:
     def __init__(self):
+
         self.particles = []
         self.background_particles = []
         self.engine_color_palette = [(79,11,118), (139,45,116), (199,73,86), (234,116,52), (246,165,11)]
 
     def particle_render(self, location):
-        self.particles.append([location, [-2, round(random.uniform(-1, 1), 1)], random.randint(6, 10)])
-
+        self.seconds = pygame.time.get_ticks() // 1000
+        if self.seconds <= 14:
+            self.particles.append([location, [-2, round(random.uniform(-1, 1), 1)], random.randint(3, 6)])
+        else:
+            self.particles.append([location, [-4, round(random.uniform(-2, 2), 1)], random.randint(6, 10)])
         for particle in self.particles:
             particle[0][0] += particle[1][0]
             particle[0][1] += particle[1][1]
@@ -29,7 +33,7 @@ class Particles:
 
     def background_render(self):
         self.seconds = pygame.time.get_ticks() // 1000
-        if self.seconds <= 14:
+        if self.seconds <= 13:
             self.background_particles.append([[width, random.randint(0, height)], -10, random.randint(2, 4)])
         else:
             self.background_particles.append([[width, random.randint(0, height)], -50, random.randint(2, 4)])
@@ -45,7 +49,6 @@ class Gun:
     def __init__(self):
         self.g_broken = False
         self.g_hacked = False
-
 
     def gun_hacking(self):
         self.g_hacked = True
@@ -76,14 +79,8 @@ class Gun:
         pass  # TODO: add firing on click
 
     def gun_render(self, rect):
-        self.gun_pos = rect[0], rect[1], rect[2] - 180, rect[3] - 110
-        self.gun_rect = pygame.g
-
-        for event in pygame.event.get():
-            if event.type == pygame.MOUSEBUTTONUP:
-                self.pos = pygame.mouse.get_pos()
-                if self.gun_rect.rect.collidepoint(self.pos):
-                    Gun.fire(self)
+        self.gun_rect = rect.inflate(-280, -100)
+        self.gun_rect.topleft = rect.topleft
 
 
 class Shields:
@@ -134,6 +131,7 @@ class Ship(Particles, Gun, Shields):
         Gun.__init__(self)
         Particles.__init__(self)
 
+
     def draw(self):
         Ship.idle(self)
         Ship.particle_render(self, [self.sprite_rect.centerx - 170, self.sprite_rect.centery + 10])
@@ -141,7 +139,6 @@ class Ship(Particles, Gun, Shields):
         Ship.shield_display(self, self.sprite_rect)
 
     def idle(self):
-
         self.sprite_rect = self.sprite_rect.move(self.speed)
         if self.sprite_rect.centerx <= self.initial_x - 30 or self.sprite_rect.centerx >= self.initial_x + 30:
             self.speed[0] = -self.speed[0]
@@ -157,6 +154,13 @@ class Ship(Particles, Gun, Shields):
             self.gun_stat = Ship.gun_status(self)
             self.shield_stat = Ship.shield_status(self)
             self.ship_menu.menu(f"Guns: {self.gun_stat}", f"Shields: {self.shield_stat}", window, self.mouse)
+
+
+    def ship_inputs(self):
+        Ship.gun_render(self, self.sprite_rect)
+        self.mouse = pygame.mouse.get_pos()
+        if self.gun_rect.collidepoint(self.mouse):
+            Ship.fire(self)
 
 # ------------------------------------------------------------ End of Ship Stuff
 
@@ -179,6 +183,9 @@ class Main:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     sys.exit()
+                if event.type == pygame.MOUSEBUTTONUP:
+                    mainship.ship_inputs()
+
 
             window.fill(self.black)
             particle1.background_render()
