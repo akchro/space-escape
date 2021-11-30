@@ -11,9 +11,11 @@ class ShipMenu:
         self.font.render(self.image, "test", (30, 10))
         surface.blit(self.image, (location[0], location[1] - self.image.get_height()))
 
-    def menu(self, guns, shields, surface, location): # TODO add shields/hull
-        self.font.render(self.image, guns, (60, 20))
-        self.font.render(self.image, shields, (40, 45))
+    def menu(self, hp, guns, shields, energy, surface, location): # TODO add shields/hull
+        self.font.render(self.image, hp, (60, 20))
+        self.font.render(self.image, guns, (40, 45))
+        self.font.render(self.image, shields, (20, 70))
+        self.font.render(self.image, energy, (20, 95))
         surface.blit(self.image, (location[0], location[1] - self.image.get_height()))
 
 

@@ -4,7 +4,6 @@ import text
 import ui
 import random
 
-
 width, height = 1280, 720
 window = pygame.display.set_mode((width, height))
 window_clock = pygame.time.Clock()  # creates clock to control framerate
@@ -15,11 +14,11 @@ class Particles:
 
         self.particles = []
         self.background_particles = []
-        self.engine_color_palette = [(79,11,118), (139,45,116), (199,73,86), (234,116,52), (246,165,11)]
+        self.engine_color_palette = [(79, 11, 118), (139, 45, 116), (199, 73, 86), (234, 116, 52), (246, 165, 11)]
 
     def particle_render(self, location):
-        self.seconds = pygame.time.get_ticks() // 1000
-        if self.seconds <= 14:
+        self.seconds = pygame.time.get_ticks() / 1000
+        if self.seconds <= 13.5:
             self.particles.append([location, [-2, round(random.uniform(-1, 1), 1)], random.randint(3, 6)])
         else:
             self.particles.append([location, [-4, round(random.uniform(-2, 2), 1)], random.randint(6, 10)])
@@ -27,12 +26,13 @@ class Particles:
             particle[0][0] += particle[1][0]
             particle[0][1] += particle[1][1]
             particle[2] -= 0.2
-            pygame.draw.circle(window, (234,116,52) if particle[2] >= 5 else random.choice(self.engine_color_palette), particle[0], particle[2])
+            pygame.draw.circle(window, (234, 116, 52) if particle[2] >= 5 else random.choice(self.engine_color_palette),
+                               particle[0], particle[2])
             if particle[2] <= 0:
                 self.particles.remove(particle)
 
     def background_render(self):
-        self.seconds = pygame.time.get_ticks() // 1000
+        self.seconds = pygame.time.get_ticks() / 1000
         if self.seconds <= 13:
             self.background_particles.append([[width, random.randint(0, height)], -10, random.randint(2, 4)])
         else:
@@ -49,6 +49,7 @@ class Gun:
     def __init__(self):
         self.g_broken = False
         self.g_hacked = False
+        self.shots = []
 
     def gun_hacking(self):
         self.g_hacked = True
@@ -74,13 +75,25 @@ class Gun:
 
         return self.g_status
 
-    def fire(self):
-        print("fire")
-        pass  # TODO: add firing on click
+    def fire(self, energy):
+        if energy - 2 >= 0:
+            print("fire")
+            Gun.shot_render(self)
+            self.shots.append([[self.gun_rect.centerx - 30, self.gun_rect.centery - 20], -20, 10])
+            return energy - 2
+        else:
+            return energy
 
     def gun_render(self, rect):
         self.gun_rect = rect.inflate(-280, -100)
         self.gun_rect.topleft = rect.topleft
+
+    def shot_render(self):
+        for shot in self.shots:
+            shot[0][0] += shot[1]
+            pygame.draw.circle(window, (255, 0, 0), shot[0], shot[2])
+            if shot[0][0] <= -10:
+                self.shots.remove(shot)
 
 
 class Shields:
@@ -116,6 +129,9 @@ class Shields:
             self.shield3_rect.center = sprite.center
             window.blit(self.shield3, self.shield3_rect)
 
+    def shield_render(self, rect):
+        pass
+
 
 class Ship(Particles, Gun, Shields):
     def __init__(self):
@@ -124,6 +140,7 @@ class Ship(Particles, Gun, Shields):
         self.image_height = self.sprite.get_height()
         self.sprite_rect = self.sprite.get_rect()
         self.health = 10  # May be a variable if I add difficulty setting
+        self.energy = 10
         self.sprite_rect.centerx, self.sprite_rect.centery = width // 2, height // 2  # Initial position
         self.initial_x, self.initial_y = width // 2, height // 2  # Sloppy code rn but its like 1 am and too lazy
         self.speed = [1, 1]
@@ -131,10 +148,12 @@ class Ship(Particles, Gun, Shields):
         Gun.__init__(self)
         Particles.__init__(self)
 
-
     def draw(self):
-        Ship.idle(self)
+        self.seconds = pygame.time.get_ticks() / 1000
+        if self.seconds >= 14.5:
+            Ship.idle(self)
         Ship.particle_render(self, [self.sprite_rect.centerx - 170, self.sprite_rect.centery + 10])
+        Ship.shot_render(self)
         window.blit(self.sprite, self.sprite_rect)
         Ship.shield_display(self, self.sprite_rect)
 
@@ -153,14 +172,18 @@ class Ship(Particles, Gun, Shields):
         if self.collide:
             self.gun_stat = Ship.gun_status(self)
             self.shield_stat = Ship.shield_status(self)
-            self.ship_menu.menu(f"Guns: {self.gun_stat}", f"Shields: {self.shield_stat}", window, self.mouse)
-
+            self.ship_menu.menu(f"Health: {self.health}",
+                                f"Guns: {self.gun_stat}",
+                                f"Shields: {self.shield_stat}",
+                                f"Energy: {self.energy}",
+                                window, self.mouse)
 
     def ship_inputs(self):
         Ship.gun_render(self, self.sprite_rect)
         self.mouse = pygame.mouse.get_pos()
         if self.gun_rect.collidepoint(self.mouse):
-            Ship.fire(self)
+            self.energy = Ship.fire(self, self.energy)
+
 
 # ------------------------------------------------------------ End of Ship Stuff
 
@@ -170,8 +193,6 @@ class Main:
         self.black = 0, 0, 0
         pygame.init()
         self.main()
-
-
 
     def main(self):
         mainship = Ship()
@@ -185,7 +206,6 @@ class Main:
                     sys.exit()
                 if event.type == pygame.MOUSEBUTTONUP:
                     mainship.ship_inputs()
-
 
             window.fill(self.black)
             particle1.background_render()
