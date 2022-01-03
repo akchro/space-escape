@@ -77,7 +77,6 @@ class Gun:
 
     def fire(self, energy):
         if energy - 2 >= 0:
-            print("fire")
             Gun.shot_render(self)
             self.shots.append([[self.gun_rect.centerx - 30, self.gun_rect.centery - 20], -20, 10])
             return energy - 2
